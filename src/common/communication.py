@@ -42,3 +42,6 @@ class ResponseCode:
     ROOM_CREATED = 1
     GAME_INTERRUPTED = 2
     GAME_OVER = 3
+    SERVER_FULL = 4
+    WRONG_ROOM_ID = 5
+    NOT_OK = 6
