@@ -13,10 +13,12 @@ class PlayerData:
         self.heading = heading
         self.lastPos = lastPos
 
+
 class GameStatus:
     WON = 0
     LOST = 1
     RUNNING = 2
+
 
 class GameData:
     def __init__(self, playerData, board, status) -> None:

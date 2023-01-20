@@ -40,14 +40,17 @@ class GameConnectionStub:
         resp = pickle.loads(resp)
         return resp
 
+
 _GAME_CLIENT_LOCK = threading.Lock()
 
 
 class RepeatActionException(Exception):
     pass
 
+
 class NotPlayersTurn(Exception):
     pass
+
 
 class GameClientType:
     JOIN_ROOM = 1
@@ -57,6 +60,7 @@ class GameClientType:
         self.type = clientType
         self.data = data
 
+
 class GameClient:
     def __init__(self, address, port, pollRate, clientType):
         self._cachedData = None
@@ -64,10 +68,13 @@ class GameClient:
         self._roomCode = None
         self._exc_info = None
 
-        self._pollerThread = threading.Thread(target=self._threadFn, args=(address, port, pollRate, clientType), daemon=True)
+        self._pollerThread = threading.Thread(
+            target=self._threadFn,
+            args=(address, port, pollRate, clientType),
+            daemon=True,
+        )
         self._shutdownPoller = False
         self._pollerThread.start()
-
 
     def _threadFn(self, address, port, pollRate, clientType):
         try:
@@ -95,7 +102,6 @@ class GameClient:
                     respCode, res = stub.waitForRoom()
                     if respCode != communication.ResponseCode.ROOM_CREATED:
                         raise Exception()
-
 
                 pollInterval = 1 / pollRate
                 while True:
@@ -126,6 +132,7 @@ class GameClient:
         except Exception:
             with _GAME_CLIENT_LOCK:
                 import sys
+
                 self._exc_info = sys.exc_info()
 
     def gameData(self):

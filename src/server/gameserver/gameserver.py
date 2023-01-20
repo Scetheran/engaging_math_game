@@ -1,17 +1,13 @@
-import os
-import sys
 import time
-import queue
 import socket
 import struct
-import errno
-import threading
 import random
 import multiprocessing
 import selectors
 import base64
 
 from common import communication, gamedata
+
 
 class GameRoom:
     def __init__(self, chan, id, ownerConn, tickRate) -> None:
@@ -61,7 +57,11 @@ class GameRoom:
             rawResponse = communication.buildMsg(
                 (
                     communication.ResponseCode.OK,
-                    gamedata.GameData(self._playerData[playerID], self._currentBoard, gamedata.GameStatus.RUNNING),
+                    gamedata.GameData(
+                        self._playerData[playerID],
+                        self._currentBoard,
+                        gamedata.GameStatus.RUNNING,
+                    ),
                 )
             )
             playerConn.sendall(rawResponse)
@@ -105,6 +105,7 @@ class GameRoom:
 
             time.sleep(self._sleepDelay)
 
+
 class GameServer:
     def __init__(self, address, port, tickRate):
         self._address = address
@@ -121,30 +122,23 @@ class GameServer:
 
     def _handleCreateRoom(self, conn, addr):
         if self._semaphore.acquire(block=False):
-                (parent_conn, child_conn) = multiprocessing.Pipe(duplex=True)
-                (ip, port) = addr
-                roomId = socket.inet_aton(ip)
-                roomId += struct.pack("!H", port)
-                roomCode = base64.b32encode(roomId).decode().rstrip("= \n\r\t")
-                pr = multiprocessing.Process(
-                    target=GameServer._roomHandler,
-                    args=(child_conn, roomCode, conn, self._semaphore, self._tickRate),
-                    daemon=True,
-                )
-                pr.start()
-                self._openRooms[roomCode] = parent_conn
-                print(f"Room code: {roomCode}")
-                return communication.buildMsg(
-                    (
-                        communication.ResponseCode.OK,
-                        roomCode
-                    )
-                )
+            (parent_conn, child_conn) = multiprocessing.Pipe(duplex=True)
+            (ip, port) = addr
+            roomId = socket.inet_aton(ip)
+            roomId += struct.pack("!H", port)
+            roomCode = base64.b32encode(roomId).decode().rstrip("= \n\r\t")
+            pr = multiprocessing.Process(
+                target=GameServer._roomHandler,
+                args=(child_conn, roomCode, conn, self._semaphore, self._tickRate),
+                daemon=True,
+            )
+            pr.start()
+            self._openRooms[roomCode] = parent_conn
+            print(f"Room code: {roomCode}")
+            return communication.buildMsg((communication.ResponseCode.OK, roomCode))
 
         print("All available rooms are currently occupied")
-        return communication.buildMsg(
-            (communication.ResponseCode.SERVER_FULL, None)
-        )
+        return communication.buildMsg((communication.ResponseCode.SERVER_FULL, None))
 
     def _handleJoinRoom(self, conn, roomCode):
         if roomCode not in self._openRooms:
@@ -157,9 +151,7 @@ class GameServer:
         pipe.recv()
         pipe.close()
         self._openRooms.pop(roomCode)
-        return communication.buildMsg(
-            (communication.ResponseCode.OK, None)
-        )
+        return communication.buildMsg((communication.ResponseCode.OK, None))
 
     def _handleNewConnection(self, conn, addr):
         rawRequest = communication.recv_msg(conn)
