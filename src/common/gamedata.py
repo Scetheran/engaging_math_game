@@ -35,6 +35,14 @@ class GameBoard:
     def __init__(self, data: list) -> None:
         self._board = data
 
+    def tileToStr(tileData):
+        if tileData == GameBoard.SpecialTile.EMPTY:
+            return "X"
+        elif tileData == GameBoard.SpecialTile.SMILEY:
+            return ":)"
+
+        return str(tileData)
+
     def getAt(self, x, y):
         return self._board[x + 8 * y]
 

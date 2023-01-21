@@ -17,7 +17,7 @@ class GameConnectionStub:
         self._conn.sendall(requestMsg)
         response = communication.recv_msg(self._conn)
         if response is None:
-            raise Exception()
+            raise ConnectionLost()
         response = pickle.loads(response)
         return response
 
@@ -36,7 +36,7 @@ class GameConnectionStub:
     def waitForRoom(self):
         resp = communication.recv_msg(self._conn)
         if resp is None:
-            raise Exception()
+            raise ConnectionLost()
         resp = pickle.loads(resp)
         return resp
 
@@ -51,6 +51,12 @@ class RepeatActionException(Exception):
 class NotPlayersTurn(Exception):
     pass
 
+class IncorrectMove(Exception):
+    pass
+
+class ConnectionLost(Exception):
+    pass
+
 
 class GameClientType:
     JOIN_ROOM = 1
@@ -62,7 +68,7 @@ class GameClientType:
 
 
 class GameClient:
-    def __init__(self, address, port, pollRate, clientType):
+    def __init__(self, address, port, clientType, pollRate):
         self._cachedData = None
         self._takeTile = None
         self._roomCode = None
@@ -124,9 +130,10 @@ class GameClient:
                     if move is not None:
                         (x, y) = move
                         respCode, res = stub.takeTile(x, y)
-                        if respCode == communication.ResponseCode.OK:
-                            with _GAME_CLIENT_LOCK:
-                                self._cachedData = res
+                        with _GAME_CLIENT_LOCK:
+                            self._takeTile = None
+                        if respCode != communication.ResponseCode.OK:
+                            raise IncorrectMove()
 
                     time.sleep(pollInterval)
         except Exception:

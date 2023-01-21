@@ -1,7 +1,9 @@
+import sys # TODO: remove later
 import pygame
 
 from client.common.layer import LayerStack
 from client.gui.layers.boardguilayer import BoardGUILayer
+from client.connection.layers.connectionlayer import ConnectionLayer
 
 
 class GameApp:
@@ -12,9 +14,10 @@ class GameApp:
         self._displayScreen = pygame.display.set_mode(screenSize)
         pygame.key.set_repeat(300, 100)
 
+        connectionLayer = ConnectionLayer(sys.argv[1], int(sys.argv[2]), clientPollrate=15)
         boardGUILayer = BoardGUILayer()
-        boardGUILayer.turnOn()
-        self._layerStack = LayerStack([boardGUILayer])
+        boardGUILayer.switchOn()
+        self._layerStack = LayerStack([connectionLayer, boardGUILayer])
 
     def _handleEvents(self):
         for event in pygame.event.get():
@@ -30,12 +33,10 @@ class GameApp:
         for layer in self._layerStack:
             self._eventSubscriptions[layer.getID()] = set(layer.internalEventSubscriptions())
 
+        clock = pygame.time.Clock()
         while self._running:
+            clock.tick(30)
             self._handleEvents()
-            for layer in self._layerStack:
-                if layer.isSwitchedOn():
-                    layer.onUpdate()
-
             for layer in self._layerStack:
                 events = layer.emitEvents()
                 for e in events:
@@ -44,6 +45,9 @@ class GameApp:
                            e.id in self._eventSubscriptions[l.getID()]:
                             l.handleInternalEvent(e)
 
+            for layer in self._layerStack:
+                if layer.isSwitchedOn():
+                    layer.onUpdate()
 
             for layer in self._layerStack:
                 if layer.isSwitchedOn():
@@ -52,4 +56,4 @@ class GameApp:
             pygame.display.flip()
 
         for layer in self._layerStack:
-            layer.turnOff()
+            layer.switchOff()

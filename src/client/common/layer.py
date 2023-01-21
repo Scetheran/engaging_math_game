@@ -13,23 +13,23 @@ class GameAppLayer:
     def getID(self):
         return self._id
 
-    def _handleTurnOn(self):
+    def _handleSwitchOn(self):
         pass
 
-    def _handleTurnOff(self):
+    def _handleSwitchOff(self):
         pass
 
     def _subscribeToInternalEvents(self):
         return []
 
-    def turnOn(self):
+    def switchOn(self):
         self._isSwitchedOn = True
-        self._handleTurnOn()
+        self._handleSwitchOn()
         self._subscribeToInternalEvents()
 
-    def turnOff(self):
+    def switchOff(self):
         self._isSwitchedOn = False
-        self._handleTurnOff()
+        self._handleSwitchOff()
 
     def internalEventSubscriptions(self):
         return self._subscribeToInternalEvents()
@@ -44,7 +44,7 @@ class GameAppLayer:
         pass
 
     def pushInternalEvent(self, eventID, data=None):
-        self._pushedEvents.append[InternalEvent(eventID, data)]
+        self._pushedEvents.append(InternalEvent(eventID, data))
 
     def onUpdate(self):
         pass
