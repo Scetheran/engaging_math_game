@@ -1,15 +1,11 @@
 import pygame
 from client.gui.baseguilayer import GUILayer
-from client.appcommon.dataobj import DataObject
+from client.common.dataobj import DataObject
 
 
 class BoardGUILayer(GUILayer):
-    def __init__(
-        self,
-        getSharedDataCallback,
-        switchLayerCallback,
-    ):
-        super().__init__("boardGUI", getSharedDataCallback, switchLayerCallback)
+    def __init__(self):
+        super().__init__("boardgui.layer.id")
         self._selectorRow = 0
         self._selectorColumn = 0
         self._rects = None

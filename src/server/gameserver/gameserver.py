@@ -31,6 +31,10 @@ class GameRoom:
         while self._p1ID == self._p2ID:
             self._p2ID = random.random(1000, 9999)
         pass
+        self._enemyID = {
+            self._p1ID : self._p2ID,
+            self._p2ID : self._p1ID
+        }
 
         p1Heading = random.randint(0, 1)
         p1Turn = bool(random.randint(0, 1))
@@ -49,12 +53,20 @@ class GameRoom:
 
         self._currentPlayerTurn = self._p1ID if p1Turn else self._p2ID
         self._currentBoardPos = (startX, startY)
+        self._currentHeading = p1Heading if p1Turn else p2Heading
         self._currentBoard = board
 
     def _handleRequest(self, playerConn, playerID, rawRequest):
         request = communication.parseMsg(rawRequest)
-        if request.id == gamedata.Request.GET_BOARD_STATE and request.data == None:
-            rawResponse = communication.buildMsg(
+        if request.id == gamedata.Request.GET_BOARD_STATE and request.data is None:
+            self._handleGetDataRequest(playerConn, playerID)
+        elif request.id == gamedata.Request.MAKE_MOVE and request.data is not None:
+            self._handlePickTileRequest(playerConn, playerID, request.data)
+        else:
+            raise Exception()
+
+    def _handleGetDataRequest(self, playerConn, playerID):
+        rawResponse = communication.buildMsg(
                 (
                     communication.ResponseCode.OK,
                     gamedata.GameData(
@@ -64,9 +76,53 @@ class GameRoom:
                     ),
                 )
             )
-            playerConn.sendall(rawResponse)
-        else:
+        playerConn.sendall(rawResponse)
+
+    def _handlePickTileRequest(self, playerConn, playerID, pos):
+        if self._currentPlayerTurn != playerID:
+            return communication.buildMsg(
+                (communication.ResponseCode.NOT_OK, None)
+            )
+
+        if self._currentHeading != self._playerData[playerID].heading:
             raise Exception()
+
+        if self._currentBoardPos[self._currentHeading] != pos[self._currentHeading]:
+            return communication.buildMsg(
+                (communication.ResponseCode.NOT_OK, None)
+            )
+
+        chosenTile = self._currentBoard.getAt(*pos)
+        if chosenTile == gamedata.GameBoard.SpecialTile.SMILEY or\
+           chosenTile == gamedata.GameBoard.SpecialTile.EMPTY:
+            return communication.buildMsg(
+                (communication.ResponseCode.NOT_OK, None)
+            )
+
+        enemyID = self._enemyID[playerID]
+
+        self._currentBoard.setAt(*self._currentBoardPos, gamedata.GameBoard.SpecialTile.EMPTY)
+        self._currentBoardPos = pos
+        self._currentBoard.setAt(*pos, gamedata.GameBoard.SpecialTile.SMILEY)
+        self._currentPlayerTurn = self._enemyID[enemyID]
+        self._currentHeading = 1 - self._currentHeading
+
+        self._playerData[playerID].ownScore += chosenTile
+        self._playerData[playerID].turn = bool(playerID == self._currentPlayerTurn)
+        self._playerData[playerID].lastPos = pos
+
+        self._playerData[enemyID].enemyScore += chosenTile
+        self._playerData[enemyID].turn = bool(enemyID == self._currentPlayerTurn)
+        self._playerData[enemyID].lastPos = pos
+
+        # TODO: Check if skipping a turn is required
+
+        return communication.buildMsg(
+                (communication.ResponseCode.OK, None)
+        )
+
+
+
 
     def runGame(self):
         self._prepareGame()

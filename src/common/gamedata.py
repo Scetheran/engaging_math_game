@@ -3,8 +3,8 @@ import random
 
 class PlayerData:
     class Heading:
-        ROWS = 0
-        COLUMNS = 1
+        ROWS = 1
+        COLUMNS = 0
 
     def __init__(self, ownScore, enemyScore, turn, heading, lastPos) -> None:
         self.ownScore = ownScore

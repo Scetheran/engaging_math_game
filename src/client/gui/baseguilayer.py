@@ -1,15 +1,15 @@
 import time
 
 import pygame
-from client.appcommon.applayer import GameAppLayer
+from client.common.layer import GameAppLayer
 
 
 class GUILayer(GameAppLayer):
     _LAST_MOVEMENT_CAUSE_KEYBOARD = 0
     _LAST_MOVEMENT_CAUSE_MOUSE = 1
 
-    def __init__(self, name, getSharedDataCallback=None, switchLayerCallback=None):
-        super().__init__(name, getSharedDataCallback, switchLayerCallback)
+    def __init__(self, name):
+        super().__init__(name)
         self._lastMovementCause = GUILayer._LAST_MOVEMENT_CAUSE_MOUSE
         self._internalMouseMoveOccurred = False
         self._lastMouseMovementTime = time.time()

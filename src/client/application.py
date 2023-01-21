@@ -1,17 +1,18 @@
 import pygame
 
-from client.appcommon.dataobj import DataObject
-from client.appcommon.applayer import LayerStack
+from client.common.layer import LayerStack
 from client.gui.layers.boardguilayer import BoardGUILayer
 
 
 class GameApp:
     def __init__(self, screenSize):
         self._running = True
+        self._eventSubscriptions = {}
+
         self._displayScreen = pygame.display.set_mode(screenSize)
         pygame.key.set_repeat(300, 100)
 
-        boardGUILayer = BoardGUILayer(self._getSharedData, self._switchLayer)
+        boardGUILayer = BoardGUILayer()
         boardGUILayer.turnOn()
         self._layerStack = LayerStack([boardGUILayer])
 
@@ -25,24 +26,24 @@ class GameApp:
                     if layer.handleEvent(event):
                         break
 
-    def _getSharedData(self, name):
-        if name not in self._sharedData:
-            return None
-
-        return self._sharedData[name]
-
-    def _switchLayer(self, layerName, action):
-        if action == "on":
-            self._layerStack.getByName(layerName).turnOn()
-        if action == "off":
-            self._layerStack.getByName(layerName).turnOff()
-
     def run(self):
+        for layer in self._layerStack:
+            self._eventSubscriptions[layer.getID()] = set(layer.internalEventSubscriptions())
+
         while self._running:
             self._handleEvents()
             for layer in self._layerStack:
                 if layer.isSwitchedOn():
                     layer.onUpdate()
+
+            for layer in self._layerStack:
+                events = layer.emitEvents()
+                for e in events:
+                    for l in self._layerStack:
+                        if l.getID() != layer.getID() and\
+                           e.id in self._eventSubscriptions[l.getID()]:
+                            l.handleInternalEvent(e)
+
 
             for layer in self._layerStack:
                 if layer.isSwitchedOn():
@@ -51,5 +52,4 @@ class GameApp:
             pygame.display.flip()
 
         for layer in self._layerStack:
-            if layer.isSwitchedOn():
-                layer.turnOff()
+            layer.turnOff()
