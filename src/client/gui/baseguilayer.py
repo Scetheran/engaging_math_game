@@ -29,6 +29,9 @@ class GUILayer(GameAppLayer):
     def _handleMouseMovedEvent(self, event):
         return False
 
+    def _handleMouseLBClickedEvent(self, event):
+        return False
+
     def handleEvent(self, event):
         if event.type == pygame.KEYDOWN:
             self._lastMovementCause = GUILayer._LAST_MOVEMENT_CAUSE_KEYBOARD
@@ -41,6 +44,10 @@ class GUILayer(GameAppLayer):
                     pygame.mouse.set_visible(True)
             else:
                 self._internalMouseMoveOccurred = False
+            return self._handleMouseMovedEvent(event)
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == pygame.BUTTON_LEFT:
+                return self._handleMouseLBClickedEvent(event)
 
     def _onRender(self, screen):
         pass

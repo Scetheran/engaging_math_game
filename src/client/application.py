@@ -2,7 +2,7 @@ import sys # TODO: remove later
 import pygame
 
 from client.common.layer import LayerStack
-from client.gui.layers.boardguilayer import BoardGUILayer
+from client.gui.layers.boardlayer import BoardLayer
 from client.connection.layers.connectionlayer import ConnectionLayer
 
 
@@ -15,7 +15,7 @@ class GameApp:
         pygame.key.set_repeat(300, 100)
 
         connectionLayer = ConnectionLayer(sys.argv[1], int(sys.argv[2]), clientPollrate=15)
-        boardGUILayer = BoardGUILayer()
+        boardGUILayer = BoardLayer()
         boardGUILayer.switchOn()
         self._layerStack = LayerStack([connectionLayer, boardGUILayer])
 

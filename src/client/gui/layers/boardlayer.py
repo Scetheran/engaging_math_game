@@ -6,7 +6,7 @@ from client import eventlist
 from common.gamedata import GameBoard, PlayerData
 
 
-class BoardGUILayer(GUILayer):
+class BoardLayer(GUILayer):
     def __init__(self):
         super().__init__("boardgui.layer.id")
         self._selectorRow = 0
@@ -91,6 +91,11 @@ class BoardGUILayer(GUILayer):
         if event.key == pygame.K_RETURN:
             self.pushInternalEvent(eventlist.BOARDGUILAYER_MOVEMADE_ID, (self._selectorColumn, self._selectorRow))
         return True
+
+    def _handleMouseLBClickedEvent(self, event):
+        if self._selectorOuterRect is not None:
+            if self._selectorOuterRect[0].collidepoint(*event.pos):
+                self.pushInternalEvent(eventlist.BOARDGUILAYER_MOVEMADE_ID, (self._selectorColumn, self._selectorRow))
 
     def onUpdate(self):
         if self._gameData is None:
