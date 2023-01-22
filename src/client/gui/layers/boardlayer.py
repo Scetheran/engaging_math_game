@@ -8,14 +8,8 @@ from common.gamedata import GameBoard, PlayerData
 class BoardLayer(GUILayer):
     def __init__(self):
         super().__init__("boardgui.layer.id")
-        self._selectorRow = 0
-        self._selectorColumn = 0
-        self._rects = None
-        self._selectorInnerRect = None
-        self._selectorOuterRect = None
-        self._tileBorderColor = None
+        self._handleSwitchOn()
         self._gameConfig = self._generateGameConfig()
-        self._gameData = None
 
     def _handleKeyPressedEvent(self, event):
         if event.key == pygame.K_w or event.key == pygame.K_UP:
@@ -30,25 +24,31 @@ class BoardLayer(GUILayer):
         self._selectorColumn = (8 + self._selectorColumn) % 8
         self._selectorRow = (8 + self._selectorRow) % 8
 
-        if event.key == pygame.K_o:
-            self.pushInternalEvent(eventlist.JOINROOMGUILAYER_OPENROOM_ID)
-
         if event.key == pygame.K_j:
-            self.pushInternalEvent(eventlist.OPENROOMGUILAYER_JOINROOM_ID, sys.argv[3])
+            self.pushInternalEvent(eventlist.OPENROOMGUILAYER_OPENROOM_ID, sys.argv[3])
 
         if event.key == pygame.K_RETURN:
             self.pushInternalEvent(eventlist.BOARDGUILAYER_MOVEMADE_ID, (self._selectorColumn, self._selectorRow))
         return True
 
+    def _handleSwitchOn(self):
+        self._selectorRow = 0
+        self._selectorColumn = 0
+        self._rects = None
+        self._selectorInnerRect = None
+        self._selectorOuterRect = None
+        self._tileBorderColor = None
+        self._gameData = None
+
     def _handleMouseLBClickedEvent(self, event):
         if self._selectorOuterRect is not None:
             if self._selectorOuterRect[0].collidepoint(*event.pos):
                 self.pushInternalEvent(eventlist.BOARDGUILAYER_MOVEMADE_ID, (self._selectorColumn, self._selectorRow))
+        return True
 
-    def onUpdate(self):
+    def _onUpdate(self):
         if self._gameData is None:
             return
-        print(self._gameData)
         offsetx = (
             self._gameConfig.screenCenterX
             - 4 * self._gameConfig.tileSize

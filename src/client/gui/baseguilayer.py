@@ -15,6 +15,11 @@ class GUILayer(GameAppLayer):
         self._internalMouseMoveOccurred = False
         self._lastMouseMovementTime = time.time()
 
+        self._isAwaitingSwitchOff = False
+        self._switchOffCountdownStart = None
+        self._switchOffDelay = None
+        self._goodbyeEvents = None
+
     def _generateGameConfig(self):
         SCREEN_SIZE = pygame.display.get_window_size()
         SCREEN_WIDTH, SCREEN_HEIGHT = SCREEN_SIZE
@@ -96,9 +101,10 @@ class GUILayer(GameAppLayer):
                 self._lastMouseMovementTime = time.time()
                 if not pygame.mouse.get_visible():
                     pygame.mouse.set_visible(True)
+                return self._handleMouseMovedEvent(event)
             else:
                 self._internalMouseMoveOccurred = False
-            return self._handleMouseMovedEvent(event)
+
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == pygame.BUTTON_LEFT:
                 return self._handleMouseLBClickedEvent(event)
@@ -107,7 +113,6 @@ class GUILayer(GameAppLayer):
         pass
 
     def onRender(self, screen):
-
         self._onRender(screen)
 
         if (
@@ -115,3 +120,35 @@ class GUILayer(GameAppLayer):
             and self._lastMouseMovementTime + 0.5 < time.time()
         ):
             pygame.mouse.set_visible(False)
+
+    def _onUpdate(self):
+        pass
+
+    def onUpdate(self):
+        if self.isAwaitingSwitchOff():
+            now = time.time()
+            if self._switchOffCountdownStart + self._switchOffDelay < now:
+                if self._goodbyeEvents is not None:
+                    for e in self._goodbyeEvents:
+                        self.pushInternalEvent(e.id, e.data)
+                self._lastMovementCause = GUILayer._LAST_MOVEMENT_CAUSE_MOUSE
+                self._internalMouseMoveOccurred = False
+                self._lastMouseMovementTime = time.time()
+
+                self._isAwaitingSwitchOff = False
+                self._switchOffCountdownStart = None
+                self._switchOffDelay = None
+                self._goodbyeEvents = None
+                self.switchOff()
+                return
+        self._onUpdate()
+
+
+    def scheduleSwitchOff(self, delay, goodbyeEvents=None):
+        self._isAwaitingSwitchOff = True
+        self._switchOffCountdownStart = time.time()
+        self._switchOffDelay = delay
+        self._goodbyeEvents = goodbyeEvents
+
+    def isAwaitingSwitchOff(self):
+        return self._isAwaitingSwitchOff

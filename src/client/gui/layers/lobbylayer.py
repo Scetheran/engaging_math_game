@@ -1,5 +1,6 @@
 import pygame
 
+from client.common.layer import InternalEvent
 from client.gui.baseguilayer import GUILayer
 from client import eventlist
 
@@ -31,6 +32,16 @@ class LobbyLayer(GUILayer):
 
         self._events = [eventlist.LOBBYGUILAYER_TRANSOPENROOM_ID, eventlist.LOBBYGUILAYER_TRANSJOINROOM_ID, eventlist.LOBBYGUILAYER_QUITGAME_ID]
 
+    def _handleSwitchOn(self):
+        self._selectedRect = 0
+
+    def _subscribeToInternalEvents(self):
+        return [eventlist.OPENROOMGUILAYER_TRANSLOBBY_ID]
+
+    def handleInternalEvent(self, event):
+        if event.id == eventlist.OPENROOMGUILAYER_TRANSLOBBY_ID:
+            self.switchOn()
+
     def _handleKeyPressedEvent(self, event):
         if event.key == pygame.K_w or event.key == pygame.K_UP:
             self._selectedRect -= 1
@@ -45,12 +56,17 @@ class LobbyLayer(GUILayer):
 
         if event.key == pygame.K_RETURN:
             self.pushInternalEvent(self._events[self._selectedRect])
+            self.switchOff()
+
+        return True
 
     def _handleMouseLBClickedEvent(self, event):
         if self._rects[self._selectedRect][0].collidepoint(*event.pos):
             self.pushInternalEvent(self._events[self._selectedRect])
+            self.switchOff()
+        return True
 
-    def onUpdate(self):
+    def _onUpdate(self):
         for (idx, (r, _)) in enumerate(self._rects):
             if (
                 self.lastMovementCause() == GUILayer._LAST_MOVEMENT_CAUSE_MOUSE

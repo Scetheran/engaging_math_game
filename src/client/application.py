@@ -5,6 +5,7 @@ from client import eventlist
 from client.common.layer import LayerStack
 from client.gui.layers.boardlayer import BoardLayer
 from client.gui.layers.lobbylayer import LobbyLayer
+from client.gui.layers.openroomlayer import OpenRoomLayer
 from client.connection.layers.connectionlayer import ConnectionLayer
 
 
@@ -20,8 +21,8 @@ class GameApp:
         boardGUILayer = BoardLayer()
         lobbyLayer = LobbyLayer()
         lobbyLayer.switchOn()
-        #boardGUILayer.switchOn()
-        self._layerStack = LayerStack([lobbyLayer, connectionLayer, boardGUILayer])
+        openRoomLayer = OpenRoomLayer()
+        self._layerStack = LayerStack([lobbyLayer, connectionLayer, boardGUILayer, openRoomLayer])
         self._quitGameInternalEvents = set([eventlist.LOBBYGUILAYER_QUITGAME_ID])
 
     def _handleEvents(self):
@@ -70,6 +71,3 @@ class GameApp:
                     layer.onRender(self._displayScreen)
             pygame.display.update()
             pygame.display.flip()
-
-        for layer in self._layerStack:
-            layer.switchOff()

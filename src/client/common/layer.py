@@ -24,8 +24,8 @@ class GameAppLayer:
 
     def switchOn(self):
         self._isSwitchedOn = True
+        self._pushedEvents = []
         self._handleSwitchOn()
-        self._subscribeToInternalEvents()
 
     def switchOff(self):
         self._isSwitchedOn = False

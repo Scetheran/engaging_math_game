@@ -1,3 +1,4 @@
+import sys
 import time
 import pickle
 import socket
@@ -33,8 +34,8 @@ class GameConnectionStub:
     def enterRoom(self, roomCode):
         return self._request(gamedata.Request.ENTER_ROOM, roomCode)
 
-    def waitForRoom(self):
-        resp = communication.recv_msg(self._conn)
+    def checkIfRoomIsReady(self):
+        resp = communication.recv_msg(self._conn, block=False)
         if resp is None:
             raise ConnectionLost()
         resp = pickle.loads(resp)
@@ -47,7 +48,6 @@ _GAME_CLIENT_LOCK = threading.Lock()
 class RepeatActionException(Exception):
     pass
 
-
 class NotPlayersTurn(Exception):
     pass
 
@@ -57,6 +57,14 @@ class IncorrectMove(Exception):
 class ConnectionLost(Exception):
     pass
 
+class ServerIsFull(Exception):
+    pass
+
+class WrongWroomID(Exception):
+    pass
+
+class UnexpectedError(Exception):
+    pass
 
 class GameClientType:
     JOIN_ROOM = 1
@@ -73,6 +81,7 @@ class GameClient:
         self._takeTile = None
         self._roomCode = None
         self._exc_info = None
+        self._gameIsRunning = False
 
         self._pollerThread = threading.Thread(
             target=self._threadFn,
@@ -84,6 +93,7 @@ class GameClient:
 
     def _threadFn(self, address, port, pollRate, clientType):
         try:
+            pollInterval = 1 / pollRate
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
                 s.connect((address, port))
@@ -92,35 +102,60 @@ class GameClient:
 
                 if clientType.type == GameClientType.CREATE_ROOM:
                     respCode, res = stub.createRoom()
-                    if respCode != communication.ResponseCode.OK:
-                        raise Exception()
+                    if respCode == communication.ResponseCode.SERVER_FULL:
+                        raise ServerIsFull()
+                    elif respCode != communication.ResponseCode.OK:
+                        raise UnexpectedError()
                     with _GAME_CLIENT_LOCK:
                         self._roomCode = res
-                    respCode, res = stub.waitForRoom()
-                    if respCode != communication.ResponseCode.ROOM_CREATED:
-                        raise Exception()
+                    while True:
+                        with _GAME_CLIENT_LOCK:
+                            if self._shutdownPoller:
+                                return
+                        try:
+                            respCode, res = stub.checkIfRoomIsReady()
+                            if respCode != communication.ResponseCode.ROOM_CREATED:
+                                raise UnexpectedError()
+                            break
+                        except communication.RetryDataFetch:
+                            time.sleep(pollInterval)
+
                 elif clientType.type == GameClientType.JOIN_ROOM:
                     respCode, _ = stub.enterRoom(clientType.data)
-                    if respCode != communication.ResponseCode.OK:
-                        raise Exception()
+                    if respCode == communication.ResponseCode.WRONG_ROOM_ID:
+                        raise WrongWroomID()
+                    elif respCode != communication.ResponseCode.OK:
+                        raise UnexpectedError()
                     with _GAME_CLIENT_LOCK:
                         self._roomCode = clientType.data
-                    respCode, res = stub.waitForRoom()
-                    if respCode != communication.ResponseCode.ROOM_CREATED:
-                        raise Exception()
+                    while True:
+                        with _GAME_CLIENT_LOCK:
+                            if self._shutdownPoller:
+                                return
+                        try:
+                            respCode, res = stub.checkIfRoomIsReady()
+                            if respCode != communication.ResponseCode.ROOM_CREATED:
+                                raise UnexpectedError()
+                            break
+                        except communication.RetryDataFetch:
+                            time.sleep(pollInterval)
+                        if respCode != communication.ResponseCode.ROOM_CREATED:
+                            raise UnexpectedError()
 
-                pollInterval = 1 / pollRate
+                with _GAME_CLIENT_LOCK:
+                    self._gameIsRunning = True
+
                 while True:
                     with _GAME_CLIENT_LOCK:
                         if self._shutdownPoller:
-                            break
+                            return
 
                     respCode, res = stub.getGameData()
                     if respCode == communication.ResponseCode.OK:
                         with _GAME_CLIENT_LOCK:
                             self._cachedData = res
                     else:
-                        raise Exception()
+                        raise UnexpectedError()
 
                     move = None
                     with _GAME_CLIENT_LOCK:
@@ -138,9 +173,13 @@ class GameClient:
                     time.sleep(pollInterval)
         except Exception:
             with _GAME_CLIENT_LOCK:
-                import sys
-
                 self._exc_info = sys.exc_info()
+
+    def isGameRunning(self):
+        with _GAME_CLIENT_LOCK:
+            if self._exc_info is not None:
+                raise self._exc_info[1].with_traceback(self._exc_info[2])
+            return self._gameIsRunning
 
     def gameData(self):
         with _GAME_CLIENT_LOCK:
@@ -166,7 +205,6 @@ class GameClient:
 
     def shutdown(self):
         with _GAME_CLIENT_LOCK:
-            if self._exc_info is not None:
-                raise self._exc_info[1].with_traceback(self._exc_info[2])
             self._shutdownPoller = True
-        self._pollerThread.join()
+        if self._pollerThread.is_alive():
+            self._pollerThread.join()
