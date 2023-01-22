@@ -1,8 +1,10 @@
 import sys # TODO: remove later
 import pygame
 
+from client import eventlist
 from client.common.layer import LayerStack
 from client.gui.layers.boardlayer import BoardLayer
+from client.gui.layers.lobbylayer import LobbyLayer
 from client.connection.layers.connectionlayer import ConnectionLayer
 
 
@@ -16,8 +18,11 @@ class GameApp:
 
         connectionLayer = ConnectionLayer(sys.argv[1], int(sys.argv[2]), clientPollrate=15)
         boardGUILayer = BoardLayer()
-        boardGUILayer.switchOn()
-        self._layerStack = LayerStack([connectionLayer, boardGUILayer])
+        lobbyLayer = LobbyLayer()
+        lobbyLayer.switchOn()
+        #boardGUILayer.switchOn()
+        self._layerStack = LayerStack([lobbyLayer, connectionLayer, boardGUILayer])
+        self._quitGameInternalEvents = set([eventlist.LOBBYGUILAYER_QUITGAME_ID])
 
     def _handleEvents(self):
         for event in pygame.event.get():
@@ -37,13 +42,24 @@ class GameApp:
         while self._running:
             clock.tick(30)
             self._handleEvents()
+
+            stopRunning = False
             for layer in self._layerStack:
+                if stopRunning:
+                    break
+
                 events = layer.emitEvents()
                 for e in events:
+                    if e.id in self._quitGameInternalEvents:
+                        stopRunning = True
+
                     for l in self._layerStack:
                         if l.getID() != layer.getID() and\
                            e.id in self._eventSubscriptions[l.getID()]:
                             l.handleInternalEvent(e)
+
+            if stopRunning:
+                break
 
             for layer in self._layerStack:
                 if layer.isSwitchedOn():

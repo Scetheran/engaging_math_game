@@ -1,7 +1,6 @@
 import sys # TODO: remove later
 import pygame
 from client.gui.baseguilayer import GUILayer
-from client.common.dataobj import DataObject
 from client import eventlist
 from common.gamedata import GameBoard, PlayerData
 
@@ -18,57 +17,6 @@ class BoardLayer(GUILayer):
         self._gameConfig = self._generateGameConfig()
         self._gameData = None
 
-    def _generateGameConfig(self):
-        SCREEN_SIZE = pygame.display.get_window_size()
-        SCREEN_WIDTH, SCREEN_HEIGHT = SCREEN_SIZE
-        SCREEN_CENTER_X = SCREEN_WIDTH // 2
-        SCREEN_CENTER_Y = SCREEN_HEIGHT // 2
-        SCREEN_CENTER = SCREEN_CENTER_X, SCREEN_CENTER_Y
-        TILE_SIZE = SCREEN_WIDTH // 16
-        TILE_BORDER_WIDTH = TILE_SIZE // 16
-        TILE_SELECTED_BORDER_WIDTH = TILE_SIZE // 40
-        TILE_BORDER_RADIUS = TILE_SIZE // 20
-        TILE_SPACING = TILE_SIZE // 40
-        TILE_FONT_SIZE = TILE_SIZE // 2
-        TILE_SELECTOR_OFFSET = TILE_SIZE // 20
-        TILE_SELECTOR_OFFSET_BORDER_WIDTH = TILE_SIZE // 20
-        TILE_SELECTOR_RECT_BORDER_COLOR = (200, 200, 200)
-        TILE_RECT_BORDER_COLOR = (40, 40, 40)
-        TILE_AVAILABLE_COLOR = (45, 140, 60)
-        TILE_UNAVAILABLE_COLOR = (250, 40, 60)
-        TILE_FONT = pygame.font.SysFont("Arial", TILE_FONT_SIZE, bold=True)
-        BACKGROUND_COLOR = (140, 40, 60)
-        SCOREBOARD_SIZE2 = (2 * TILE_SIZE, TILE_SIZE)
-        OWN_SCOREBOARD_POS = (TILE_SIZE, SCREEN_CENTER_Y + 3 * TILE_SIZE)
-        ENEMY_SCOREBOARD_POS = (SCREEN_WIDTH - 3 * TILE_SIZE, SCREEN_CENTER_Y - 4 * TILE_SIZE)
-        SCORE_FONT = pygame.font.SysFont("Arial", TILE_FONT_SIZE // 2, bold=True)
-        return DataObject(
-            screenWidth=SCREEN_WIDTH,
-            screenHeight=SCREEN_HEIGHT,
-            screenSize=SCREEN_SIZE,
-            screenCenterX=SCREEN_CENTER_X,
-            screenCenterY=SCREEN_CENTER_Y,
-            screenCenter=SCREEN_CENTER,
-            tileSize=TILE_SIZE,
-            tileBorderWidth=TILE_BORDER_WIDTH,
-            tileSelectedBorderWidth=TILE_SELECTED_BORDER_WIDTH,
-            tileBorderRadius=TILE_BORDER_RADIUS,
-            tileSpacing=TILE_SPACING,
-            tileFontSize=TILE_FONT_SIZE,
-            tileSelectorOffset=TILE_SELECTOR_OFFSET,
-            tileSelectorOffsetBorderWidth=TILE_SELECTOR_OFFSET_BORDER_WIDTH,
-            tileSelectorRectBorderColor=TILE_SELECTOR_RECT_BORDER_COLOR,
-            tileRectBorderColor=TILE_RECT_BORDER_COLOR,
-            tileAvailableColor=TILE_AVAILABLE_COLOR,
-            tileUnavailableColor=TILE_UNAVAILABLE_COLOR,
-            tileFont=TILE_FONT,
-            backgroundColor=BACKGROUND_COLOR,
-            scoreboardSize2=SCOREBOARD_SIZE2,
-            ownScoreboardPos=OWN_SCOREBOARD_POS,
-            enemyScoreboardPos=ENEMY_SCOREBOARD_POS,
-            scoreFont=SCORE_FONT
-        )
-
     def _handleKeyPressedEvent(self, event):
         if event.key == pygame.K_w or event.key == pygame.K_UP:
             self._selectorRow -= 1
@@ -83,10 +31,10 @@ class BoardLayer(GUILayer):
         self._selectorRow = (8 + self._selectorRow) % 8
 
         if event.key == pygame.K_o:
-            self.pushInternalEvent(eventlist.LOBBYGUILAYER_OPENROOM_ID)
+            self.pushInternalEvent(eventlist.JOINROOMGUILAYER_OPENROOM_ID)
 
         if event.key == pygame.K_j:
-            self.pushInternalEvent(eventlist.LOBBYGUILAYER_JOINROOM_ID, sys.argv[3])
+            self.pushInternalEvent(eventlist.OPENROOMGUILAYER_JOINROOM_ID, sys.argv[3])
 
         if event.key == pygame.K_RETURN:
             self.pushInternalEvent(eventlist.BOARDGUILAYER_MOVEMADE_ID, (self._selectorColumn, self._selectorRow))
@@ -179,7 +127,6 @@ class BoardLayer(GUILayer):
 
     def _onRender(self, screen):
         screen.fill(self._gameConfig.backgroundColor)
-
         if self._gameData is None:
             return
 

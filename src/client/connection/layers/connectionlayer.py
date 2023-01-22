@@ -17,13 +17,14 @@ class ConnectionLayer(GameAppLayer):
         self._client = gameclient.GameClient(self._serverAddress, self._serverPort, self._newClientType ,self._pollrate)
 
     def _handleSwitchOff(self):
-        self._client.shutdown()
-        self._client = None
+        if self._client is not None:
+            self._client.shutdown()
+            self._client = None
 
     def _subscribeToInternalEvents(self):
         return [eventlist.BOARDGUILAYER_MOVEMADE_ID,
-                eventlist.LOBBYGUILAYER_JOINROOM_ID,
-                eventlist.LOBBYGUILAYER_OPENROOM_ID]
+                eventlist.OPENROOMGUILAYER_JOINROOM_ID,
+                eventlist.JOINROOMGUILAYER_OPENROOM_ID]
 
     def handleInternalEvent(self, event):
         if event.id == eventlist.BOARDGUILAYER_MOVEMADE_ID:
@@ -49,10 +50,10 @@ class ConnectionLayer(GameAppLayer):
                 except gameclient.ConnectionLost:
                     self.pushInternalEvent(eventlist.CONNECTIONLAYER_CONNLOST_ID)
 
-        elif event.id == eventlist.LOBBYGUILAYER_OPENROOM_ID:
+        elif event.id == eventlist.JOINROOMGUILAYER_OPENROOM_ID:
             self._newClientType = gameclient.GameClientType(gameclient.GameClientType.CREATE_ROOM)
             self.switchOn()
-        elif event.id == eventlist.LOBBYGUILAYER_JOINROOM_ID:
+        elif event.id == eventlist.OPENROOMGUILAYER_JOINROOM_ID:
             self._newClientType = gameclient.GameClientType(gameclient.GameClientType.JOIN_ROOM, event.data)
             self.switchOn()
 

@@ -2,6 +2,7 @@ import time
 
 import pygame
 from client.common.layer import GameAppLayer
+from client.common.dataobj import DataObject
 
 
 class GUILayer(GameAppLayer):
@@ -13,6 +14,59 @@ class GUILayer(GameAppLayer):
         self._lastMovementCause = GUILayer._LAST_MOVEMENT_CAUSE_MOUSE
         self._internalMouseMoveOccurred = False
         self._lastMouseMovementTime = time.time()
+
+    def _generateGameConfig(self):
+        SCREEN_SIZE = pygame.display.get_window_size()
+        SCREEN_WIDTH, SCREEN_HEIGHT = SCREEN_SIZE
+        SCREEN_CENTER_X = SCREEN_WIDTH // 2
+        SCREEN_CENTER_Y = SCREEN_HEIGHT // 2
+        SCREEN_CENTER = SCREEN_CENTER_X, SCREEN_CENTER_Y
+        TILE_SIZE = SCREEN_WIDTH // 16
+        TILE_BORDER_WIDTH = TILE_SIZE // 16
+        TILE_SELECTED_BORDER_WIDTH = TILE_SIZE // 40
+        TILE_BORDER_RADIUS = TILE_SIZE // 20
+        TILE_SPACING = TILE_SIZE // 40
+        TILE_FONT_SIZE = TILE_SIZE // 2
+        TILE_FONT = pygame.font.SysFont("Arial", TILE_FONT_SIZE, bold=True)
+        TILE_SELECTOR_OFFSET = TILE_SIZE // 20
+        TILE_SELECTOR_OFFSET_BORDER_WIDTH = TILE_SIZE // 20
+        TILE_SELECTOR_RECT_BORDER_COLOR = (200, 200, 200)
+        TILE_RECT_BORDER_COLOR = (40, 40, 40)
+        TILE_AVAILABLE_COLOR = (45, 140, 60)
+        TILE_UNAVAILABLE_COLOR = (250, 40, 60)
+        BACKGROUND_COLOR = (140, 40, 60)
+        SCOREBOARD_SIZE2 = (2 * TILE_SIZE, TILE_SIZE)
+        OWN_SCOREBOARD_POS = (TILE_SIZE, SCREEN_CENTER_Y + 3 * TILE_SIZE)
+        ENEMY_SCOREBOARD_POS = (SCREEN_WIDTH - 3 * TILE_SIZE, SCREEN_CENTER_Y - 4 * TILE_SIZE)
+        SCORE_FONT = pygame.font.SysFont("Arial", TILE_FONT_SIZE // 2, bold=True)
+        MENU_ITEM_SELECTOR_OFFSET = TILE_SIZE // 15
+        return DataObject(
+            screenWidth=SCREEN_WIDTH,
+            screenHeight=SCREEN_HEIGHT,
+            screenSize=SCREEN_SIZE,
+            screenCenterX=SCREEN_CENTER_X,
+            screenCenterY=SCREEN_CENTER_Y,
+            screenCenter=SCREEN_CENTER,
+            tileSize=TILE_SIZE,
+            tileBorderWidth=TILE_BORDER_WIDTH,
+            tileSelectedBorderWidth=TILE_SELECTED_BORDER_WIDTH,
+            tileBorderRadius=TILE_BORDER_RADIUS,
+            tileSpacing=TILE_SPACING,
+            tileFontSize=TILE_FONT_SIZE,
+            tileSelectorOffset=TILE_SELECTOR_OFFSET,
+            tileSelectorOffsetBorderWidth=TILE_SELECTOR_OFFSET_BORDER_WIDTH,
+            tileSelectorRectBorderColor=TILE_SELECTOR_RECT_BORDER_COLOR,
+            tileRectBorderColor=TILE_RECT_BORDER_COLOR,
+            tileAvailableColor=TILE_AVAILABLE_COLOR,
+            tileUnavailableColor=TILE_UNAVAILABLE_COLOR,
+            tileFont=TILE_FONT,
+            backgroundColor=BACKGROUND_COLOR,
+            scoreboardSize2=SCOREBOARD_SIZE2,
+            ownScoreboardPos=OWN_SCOREBOARD_POS,
+            enemyScoreboardPos=ENEMY_SCOREBOARD_POS,
+            scoreFont=SCORE_FONT,
+            menuItemSelectorOffset=MENU_ITEM_SELECTOR_OFFSET
+        )
 
     def lastMovementCause(self):
         return self._lastMovementCause
@@ -53,6 +107,7 @@ class GUILayer(GameAppLayer):
         pass
 
     def onRender(self, screen):
+
         self._onRender(screen)
 
         if (
