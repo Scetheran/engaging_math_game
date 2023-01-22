@@ -22,7 +22,7 @@ class GameApp:
         lobbyLayer = LobbyLayer()
         lobbyLayer.switchOn()
         openRoomLayer = OpenRoomLayer()
-        self._layerStack = LayerStack([lobbyLayer, connectionLayer, boardGUILayer, openRoomLayer])
+        self._layerStack = LayerStack([openRoomLayer, connectionLayer, boardGUILayer, lobbyLayer])
         self._quitGameInternalEvents = set([eventlist.LOBBYGUILAYER_QUITGAME_ID])
 
     def _handleEvents(self):

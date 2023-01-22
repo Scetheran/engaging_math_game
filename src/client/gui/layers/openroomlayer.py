@@ -46,7 +46,7 @@ class OpenRoomLayer(GUILayer):
         self.pushInternalEvent(eventlist.OPENROOMGUILAYER_OPENROOM_ID)
 
     def _subscribeToInternalEvents(self):
-        return [eventlist.LOBBYGUILAYER_TRANSOPENROOM_ID, eventlist.CONNECTIONLAYER_ROOMCREATED_ID, eventlist.CONNECTIONLAYER_GAMEBEGAN_ID, eventlist.CONNECTIONLAYER_CONNLOST_ID, eventlist.CONNECTIONLAYER_UNEXPECTEDERROR_ID]
+        return [eventlist.LOBBYGUILAYER_TRANSOPENROOM_ID, eventlist.CONNECTIONLAYER_ROOMCREATED_ID, eventlist.CONNECTIONLAYER_GAMEBEGAN_ID, eventlist.CONNECTIONLAYER_CONNLOST_ID, eventlist.CONNECTIONLAYER_UNEXPECTEDERROR_ID, eventlist.CONNECTIONLAYER_SERVERDOWN_ID]
 
     def _handleKeyPressedEvent(self, event):
         if event.key == pygame.K_w or event.key == pygame.K_UP:
@@ -62,18 +62,21 @@ class OpenRoomLayer(GUILayer):
             self.pushInternalEvent(eventlist.OPENROOMGUILAYER_TRANSLOBBY_ID)
             self.pushInternalEvent(eventlist.OPENROOMGUILAYER_CONNSHOULDCLOSE_ID)
             self.switchOff()
+        return True
 
     def _handleMouseLBClickedEvent(self, event):
         if self._goToLobbySelected and self._goToLobbyRect.collidepoint(*event.pos):
             self.pushInternalEvent(eventlist.OPENROOMGUILAYER_TRANSLOBBY_ID)
             self.pushInternalEvent(eventlist.OPENROOMGUILAYER_CONNSHOULDCLOSE_ID)
             self.switchOff()
+        return True
 
     def _handleMouseMovedEvent(self, event):
         if self._goToLobbyRect.collidepoint(*event.pos):
             self._goToLobbySelected = True
         else:
             self._goToLobbySelected = False
+        return True
 
 
     def handleInternalEvent(self, event):
@@ -89,6 +92,9 @@ class OpenRoomLayer(GUILayer):
         elif event.id == eventlist.CONNECTIONLAYER_UNEXPECTEDERROR_ID and self.isSwitchedOn():
             self._errorMsg = "Unexpected Error"
             self.scheduleSwitchOff(3, [InternalEvent(eventlist.OPENROOMGUILAYER_TRANSLOBBY_ID)])
+        elif event.id == eventlist.CONNECTIONLAYER_SERVERDOWN_ID and self.isSwitchedOn():
+            self._errorMsg = "Server Unavailable"
+            self.scheduleSwitchOff(3, [InternalEvent(eventlist.CONNECTIONLAYER_SERVERDOWN_ID)])
 
 
     def _onRender(self, screen):

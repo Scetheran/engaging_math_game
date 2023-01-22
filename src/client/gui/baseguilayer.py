@@ -91,6 +91,22 @@ class GUILayer(GameAppLayer):
     def _handleMouseLBClickedEvent(self, event):
         return False
 
+    def _handleSwitchOff(self):
+        if self._goodbyeEvents is not None:
+            for e in self._goodbyeEvents:
+                self.pushInternalEvent(e.id, e.data)
+        self._lastMovementCause = GUILayer._LAST_MOVEMENT_CAUSE_MOUSE
+        self._internalMouseMoveOccurred = False
+        self._lastMouseMovementTime = time.time()
+        self._isAwaitingSwitchOff = False
+        self._switchOffCountdownStart = None
+        self._switchOffDelay = None
+        self._goodbyeEvents = None
+        self.__handleSwitchOff()
+
+    def __handleSwitchOff(self):
+        pass
+
     def handleEvent(self, event):
         if event.type == pygame.KEYDOWN:
             self._lastMovementCause = GUILayer._LAST_MOVEMENT_CAUSE_KEYBOARD
@@ -125,20 +141,9 @@ class GUILayer(GameAppLayer):
         pass
 
     def onUpdate(self):
-        if self.isAwaitingSwitchOff():
+        if self.isAwaitingSwitchOff() and self.isSwitchedOn():
             now = time.time()
             if self._switchOffCountdownStart + self._switchOffDelay < now:
-                if self._goodbyeEvents is not None:
-                    for e in self._goodbyeEvents:
-                        self.pushInternalEvent(e.id, e.data)
-                self._lastMovementCause = GUILayer._LAST_MOVEMENT_CAUSE_MOUSE
-                self._internalMouseMoveOccurred = False
-                self._lastMouseMovementTime = time.time()
-
-                self._isAwaitingSwitchOff = False
-                self._switchOffCountdownStart = None
-                self._switchOffDelay = None
-                self._goodbyeEvents = None
                 self.switchOff()
                 return
         self._onUpdate()

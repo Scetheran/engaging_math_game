@@ -66,13 +66,10 @@ class LobbyLayer(GUILayer):
             self.switchOff()
         return True
 
-    def _onUpdate(self):
+    def _handleMouseMovedEvent(self, event):
         for (idx, (r, _)) in enumerate(self._rects):
-            if (
-                self.lastMovementCause() == GUILayer._LAST_MOVEMENT_CAUSE_MOUSE
-                and r.collidepoint(pygame.mouse.get_pos())
-                ):
-                    self._selectedRect = idx
+            if r.collidepoint(*event.pos):
+                self._selectedRect = idx
 
     def _onRender(self, screen):
         screen.fill(self._gameConfig.backgroundColor)

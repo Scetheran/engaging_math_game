@@ -172,7 +172,7 @@ class GameServer:
         self._address = address
         self._port = port
         self._tickRate = tickRate
-        self._semaphore = multiprocessing.Semaphore(100)
+        self._semaphore = multiprocessing.Semaphore(5)
         self._openRooms = {}
 
     def _roomHandler(chan, id, sock, sem, tickRate):

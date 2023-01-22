@@ -57,6 +57,9 @@ class IncorrectMove(Exception):
 class ConnectionLost(Exception):
     pass
 
+class ServerUnavailable(Exception):
+    pass
+
 class ServerIsFull(Exception):
     pass
 
@@ -172,8 +175,11 @@ class GameClient:
 
                     time.sleep(pollInterval)
         except Exception:
-            with _GAME_CLIENT_LOCK:
-                self._exc_info = sys.exc_info()
+            try:
+                raise ServerUnavailable()
+            except Exception:
+                with _GAME_CLIENT_LOCK:
+                    self._exc_info = sys.exc_info()
 
     def isGameRunning(self):
         with _GAME_CLIENT_LOCK:

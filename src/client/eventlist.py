@@ -2,6 +2,7 @@
 
 CONNECTIONLAYER_DATAUPDATED_ID = "connection_layer.data_updated.event.id"
 CONNECTIONLAYER_CONNLOST_ID = "connection_layer.connection_lost.event.id"
+CONNECTIONLAYER_SERVERDOWN_ID = "connection_layer.server_down.event.id"
 CONNECTIONLAYER_ROOMCREATED_ID = "connection_layer.room_created.event.id"
 CONNECTIONLAYER_GAMEBEGAN_ID = "connection_layer.game_began.event.id"
 CONNECTIONLAYER_SERVERFULL_ID = "connection_layer.server_full.event.id"
@@ -16,6 +17,9 @@ OPENROOMGUILAYER_TRANSLOBBY_ID = "open_room_gui_layer.trans_lobby.event.id"
 OPENROOMGUILAYER_CONNSHOULDCLOSE_ID = "open_room_gui_layer.connection_should_close.id"
 
 JOINROOMGUILAYER_JOINROOM_ID = "join_room_gui_layer.join_room.event.id"
+JOINROOMGUILAYER_TRANSBOARDGUI_ID = "join_room_gui_layer.trans_board_gui.event.id"
+JOINROOMGUILAYER_TRANSLOBBY_ID = "join_room_gui_layer.trans_lobby.event.id"
+JOINROOMGUILAYER_CONNSHOULDCLOSE_ID = "join_room_gui_layer.connection_should_close.id"
 
 LOBBYGUILAYER_TRANSOPENROOM_ID = "lobby_gui_layer.trans_open_room.event.id"
 LOBBYGUILAYER_TRANSJOINROOM_ID = "lobby_gui_layer.trans_join_room.event.id"

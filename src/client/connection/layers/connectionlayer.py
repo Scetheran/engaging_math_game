@@ -31,7 +31,8 @@ class ConnectionLayer(GameAppLayer):
         return [eventlist.BOARDGUILAYER_MOVEMADE_ID,
                 eventlist.OPENROOMGUILAYER_OPENROOM_ID,
                 eventlist.JOINROOMGUILAYER_JOINROOM_ID,
-                eventlist.OPENROOMGUILAYER_CONNSHOULDCLOSE_ID]
+                eventlist.OPENROOMGUILAYER_CONNSHOULDCLOSE_ID,
+                eventlist.JOINROOMGUILAYER_CONNSHOULDCLOSE_ID]
 
     def _handleExceptions(self, stubFn, *stubFnArgs, **stubFnKwargs):
             try:
@@ -43,9 +44,12 @@ class ConnectionLayer(GameAppLayer):
                 pass
             except gameclient.RepeatActionException:
                 pass
-            # except gameclient.ConnectionLost:
-            #     self.pushInternalEvent(eventlist.CONNECTIONLAYER_CONNLOST_ID)
-            #     self.switchOff()
+            except gameclient.ConnectionLost:
+                self.pushInternalEvent(eventlist.CONNECTIONLAYER_CONNLOST_ID)
+                self.switchOff()
+            except gameclient.ServerUnavailable:
+                self.pushInternalEvent(eventlist.CONNECTIONLAYER_SERVERDOWN_ID)
+                self.switchOff()
             except gameclient.ServerIsFull:
                 self.pushInternalEvent(eventlist.CONNECTIONLAYER_SERVERFULL_ID)
                 self.switchOff()
@@ -81,7 +85,9 @@ class ConnectionLayer(GameAppLayer):
             self._clientType = gameclient.GameClientType(gameclient.GameClientType.JOIN_ROOM, event.data)
             self._roomCreated = True
             self.switchOn()
-        elif event.id == eventlist.OPENROOMGUILAYER_CONNSHOULDCLOSE_ID and self.isSwitchedOn():
+        elif event.id == eventlist.OPENROOMGUILAYER_CONNSHOULDCLOSE_ID:
+            self.switchOff()
+        elif event.id == eventlist.JOINROOMGUILAYER_CONNSHOULDCLOSE_ID:
             self.switchOff()
 
     def onUpdate(self):
