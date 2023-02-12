@@ -1,8 +1,9 @@
-import sys # TODO: remove later
+import sys  # TODO: remove later
 import pygame
 from client.gui.baseguilayer import GUILayer
 from client import eventlist
 from common.gamedata import GameBoard, PlayerData
+from client.common.layer import InternalEvent
 
 
 class BoardLayer(GUILayer):
@@ -10,6 +11,13 @@ class BoardLayer(GUILayer):
         super().__init__("boardgui.layer.id")
         self._handleSwitchOn()
         self._gameConfig = self._generateGameConfig()
+
+        self._infoMsgRect = pygame.Rect(
+            self._gameConfig.screenCenterX - 4 * self._gameConfig.tileSize,
+            self._gameConfig.screenCenterY - (3 * self._gameConfig.tileSize) // 2,
+            8 * self._gameConfig.tileSize,
+            self._gameConfig.tileSize,
+        )
 
     def _handleKeyPressedEvent(self, event):
         if event.key == pygame.K_w or event.key == pygame.K_UP:
@@ -28,7 +36,7 @@ class BoardLayer(GUILayer):
             self.pushInternalEvent(eventlist.OPENROOMGUILAYER_OPENROOM_ID, sys.argv[3])
 
         if event.key == pygame.K_RETURN:
-            self.pushInternalEvent(eventlist.BOARDGUILAYER_MOVEMADE_ID, (self._selectorColumn, self._selectorRow))
+            self.validateMove((self._selectorColumn, self._selectorRow))
         return True
 
     def _handleSwitchOn(self):
@@ -43,8 +51,30 @@ class BoardLayer(GUILayer):
     def _handleMouseLBClickedEvent(self, event):
         if self._selectorOuterRect is not None:
             if self._selectorOuterRect[0].collidepoint(*event.pos):
-                self.pushInternalEvent(eventlist.BOARDGUILAYER_MOVEMADE_ID, (self._selectorColumn, self._selectorRow))
+                self.validateMove((self._selectorColumn, self._selectorRow))
         return True
+
+    def validateMove(self, pos):
+        if not self._gameData.playerData.turn:
+            return
+
+        heading = self._gameData.playerData.heading
+
+        if heading == PlayerData.Heading.ROWS:
+            playRow = self._gameData.playerData.lastPos[heading]
+            playColumn = -1
+        else:
+            playRow = -1
+            playColumn = self._gameData.playerData.lastPos[heading]
+
+        column, row = pos
+        selectedTile = GameBoard.tileToStr(self._gameData.board.getAt(column, row))
+        if (
+            (column == playColumn or row == playRow)
+            and selectedTile != ":)"
+            and selectedTile != ""
+        ):
+            self.pushInternalEvent(eventlist.BOARDGUILAYER_MOVEMADE_ID, (column, row))
 
     def _onUpdate(self):
         if self._gameData is None:
@@ -119,7 +149,7 @@ class BoardLayer(GUILayer):
                         innerRect,
                         self._gameConfig.tileSelectorRectBorderColor,
                         column,
-                        row
+                        row,
                     )
                     self._selectorOuterRect = (r, tileBorderColor, column, row)
                 else:
@@ -128,6 +158,15 @@ class BoardLayer(GUILayer):
     def _onRender(self, screen):
         screen.fill(self._gameConfig.backgroundColor)
         if self._gameData is None:
+            return
+
+        if self.isAwaitingSwitchOff():
+            infoMsgText = self._gameConfig.tileFont.render(
+                self._infoMsg, True, self._gameConfig.tileRectBorderColor
+            )
+            screen.blit(
+                infoMsgText, infoMsgText.get_rect(center=self._infoMsgRect.center)
+            )
             return
 
         for (r, color, x, y) in self._rects:
@@ -139,7 +178,9 @@ class BoardLayer(GUILayer):
                 self._gameConfig.tileBorderRadius,
             )
             text = self._gameConfig.tileFont.render(
-                GameBoard.tileToStr(self._gameData.board.getAt(x, y)), True, self._gameConfig.tileRectBorderColor
+                GameBoard.tileToStr(self._gameData.board.getAt(x, y)),
+                True,
+                self._gameConfig.tileRectBorderColor,
             )
             screen.blit(text, text.get_rect(center=r.center))
 
@@ -158,25 +199,101 @@ class BoardLayer(GUILayer):
             self._gameConfig.tileBorderRadius,
         )
         text = self._gameConfig.tileFont.render(
-            GameBoard.tileToStr(self._gameData.board.getAt(self._selectorOuterRect[2], self._selectorOuterRect[3])), True, self._gameConfig.tileRectBorderColor
+            GameBoard.tileToStr(
+                self._gameData.board.getAt(
+                    self._selectorOuterRect[2], self._selectorOuterRect[3]
+                )
+            ),
+            True,
+            self._gameConfig.tileRectBorderColor,
         )
         screen.blit(text, text.get_rect(center=self._selectorOuterRect[0].center))
 
-        ownScoreRect = pygame.Rect(*self._gameConfig.ownScoreboardPos, *self._gameConfig.scoreboardSize2)
-        pygame.draw.rect(screen, self._gameConfig.tileRectBorderColor, ownScoreRect, self._gameConfig.tileBorderWidth, self._gameConfig.tileBorderRadius)
-        ownScore = self._gameConfig.scoreFont.render(f"YOU: {self._gameData.playerData.ownScore}", True, self._gameConfig.tileRectBorderColor)
+        ownScoreRect = pygame.Rect(
+            *self._gameConfig.ownScoreboardPos, *self._gameConfig.scoreboardSize2
+        )
+        pygame.draw.rect(
+            screen,
+            self._gameConfig.tileRectBorderColor,
+            ownScoreRect,
+            self._gameConfig.tileBorderWidth,
+            self._gameConfig.tileBorderRadius,
+        )
+        ownScore = self._gameConfig.scoreFont.render(
+            f"YOU: {self._gameData.playerData.ownScore}",
+            True,
+            self._gameConfig.tileRectBorderColor,
+        )
         screen.blit(ownScore, ownScore.get_rect(center=ownScoreRect.center))
 
-        enemyScoreRect = pygame.Rect(*self._gameConfig.enemyScoreboardPos, *self._gameConfig.scoreboardSize2)
-        pygame.draw.rect(screen, self._gameConfig.tileRectBorderColor, enemyScoreRect, self._gameConfig.tileBorderWidth, self._gameConfig.tileBorderRadius)
-        enemyScore = self._gameConfig.scoreFont.render(f"OPP: {self._gameData.playerData.enemyScore}", True, self._gameConfig.tileRectBorderColor)
+        enemyScoreRect = pygame.Rect(
+            *self._gameConfig.enemyScoreboardPos, *self._gameConfig.scoreboardSize2
+        )
+        pygame.draw.rect(
+            screen,
+            self._gameConfig.tileRectBorderColor,
+            enemyScoreRect,
+            self._gameConfig.tileBorderWidth,
+            self._gameConfig.tileBorderRadius,
+        )
+        enemyScore = self._gameConfig.scoreFont.render(
+            f"OPP: {self._gameData.playerData.enemyScore}",
+            True,
+            self._gameConfig.tileRectBorderColor,
+        )
         screen.blit(enemyScore, enemyScore.get_rect(center=enemyScoreRect.center))
 
         pygame.display.update()
 
     def _subscribeToInternalEvents(self):
-        return [eventlist.CONNECTIONLAYER_DATAUPDATED_ID]
+        return [
+            eventlist.CONNECTIONLAYER_GAMEOVER_LOST,
+            eventlist.CONNECTIONLAYER_GAMEOVER_WON,
+            eventlist.CONNECTIONLAYER_GAMEOVER_DRAW,
+            eventlist.CONNECTIONLAYER_CONNLOST_ID,
+            eventlist.CONNECTIONLAYER_UNEXPECTEDERROR_ID,
+            eventlist.CONNECTIONLAYER_DATAUPDATED_ID,
+            eventlist.OPENROOMGUILAYER_TRANSBOARDGUI_ID,
+            eventlist.JOINROOMGUILAYER_JOINROOM_ID,
+        ]
 
     def handleInternalEvent(self, event):
-        if event.id == eventlist.CONNECTIONLAYER_DATAUPDATED_ID:
+        if event.id == eventlist.CONNECTIONLAYER_DATAUPDATED_ID and self.isSwitchedOn():
             self._gameData = event.data
+        if (
+            event.id == eventlist.OPENROOMGUILAYER_TRANSBOARDGUI_ID
+            or event.id == eventlist.JOINROOMGUILAYER_JOINROOM_ID
+        ):
+            self.switchOn()
+        elif event.id == eventlist.CONNECTIONLAYER_CONNLOST_ID and self.isSwitchedOn():
+            self._infoMsg = "Connection Lost"
+            self.scheduleSwitchOff(
+                3, [InternalEvent(eventlist.OPENROOMGUILAYER_TRANSLOBBY_ID)]
+            )
+        elif (
+            event.id == eventlist.CONNECTIONLAYER_UNEXPECTEDERROR_ID
+            and self.isSwitchedOn()
+        ):
+            self._infoMsg = "Unexpected Error"
+            self.scheduleSwitchOff(
+                3, [InternalEvent(eventlist.OPENROOMGUILAYER_TRANSLOBBY_ID)]
+            )
+        elif (
+            event.id == eventlist.CONNECTIONLAYER_GAMEOVER_DRAW and self.isSwitchedOn()
+        ):
+            self._infoMsg = "Draw!"
+            self.scheduleSwitchOff(
+                3, [InternalEvent(eventlist.OPENROOMGUILAYER_TRANSLOBBY_ID)]
+            )
+        elif event.id == eventlist.CONNECTIONLAYER_GAMEOVER_WON and self.isSwitchedOn():
+            self._infoMsg = "You won!"
+            self.scheduleSwitchOff(
+                3, [InternalEvent(eventlist.OPENROOMGUILAYER_TRANSLOBBY_ID)]
+            )
+        elif (
+            event.id == eventlist.CONNECTIONLAYER_GAMEOVER_LOST and self.isSwitchedOn()
+        ):
+            self._infoMsg = "You Lost!"
+            self.scheduleSwitchOff(
+                3, [InternalEvent(eventlist.OPENROOMGUILAYER_TRANSLOBBY_ID)]
+            )

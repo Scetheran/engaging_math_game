@@ -48,26 +48,34 @@ _GAME_CLIENT_LOCK = threading.Lock()
 class RepeatActionException(Exception):
     pass
 
+
 class NotPlayersTurn(Exception):
     pass
+
 
 class IncorrectMove(Exception):
     pass
 
+
 class ConnectionLost(Exception):
     pass
+
 
 class ServerUnavailable(Exception):
     pass
 
+
 class ServerIsFull(Exception):
     pass
+
 
 class WrongWroomID(Exception):
     pass
 
+
 class UnexpectedError(Exception):
     pass
+
 
 class GameClientType:
     JOIN_ROOM = 1
@@ -142,8 +150,6 @@ class GameClient:
                             break
                         except communication.RetryDataFetch:
                             time.sleep(pollInterval)
-                        if respCode != communication.ResponseCode.ROOM_CREATED:
-                            raise UnexpectedError()
 
                 with _GAME_CLIENT_LOCK:
                     self._gameIsRunning = True
@@ -170,16 +176,19 @@ class GameClient:
                         respCode, res = stub.takeTile(x, y)
                         with _GAME_CLIENT_LOCK:
                             self._takeTile = None
-                        if respCode != communication.ResponseCode.OK:
+                        if respCode == communication.ResponseCode.NOT_OK:
                             raise IncorrectMove()
 
                     time.sleep(pollInterval)
-        except Exception:
+        except socket.error:
             try:
                 raise ServerUnavailable()
             except Exception:
                 with _GAME_CLIENT_LOCK:
                     self._exc_info = sys.exc_info()
+        except Exception:
+            with _GAME_CLIENT_LOCK:
+                self._exc_info = sys.exc_info()
 
     def isGameRunning(self):
         with _GAME_CLIENT_LOCK:

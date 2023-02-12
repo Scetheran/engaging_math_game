@@ -13,6 +13,12 @@ This is a simple turn based game with the following setup:
 * If the current player has no valid moves, they skip a turn.
 * The game ends once both players have no valid moves. The player with the higher score is the winner.
 
-## Implementation details
+## Installation
 
-This implementation is composed of a client with GUI that connects to a server which hosts the games. The GUI relies on `pygame`. The communication between the client and the server is handled by a very unsafe protocol comprised of a plain TCP connection which transfers the needed data which is `pickle`'d.
+* Clone the repository
+* `pip install -r requirements.txt` inside the root of the project
+
+## Run
+
+* Run `python3 ./src/server/main.py` from the project root to start the server. You can use `-h` or `--help` to check out all options.
+* Run `python3 ./src/client/main.py` from the project root to start the client. You can use `-h` or `--help` to check out all options.

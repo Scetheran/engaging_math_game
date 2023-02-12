@@ -31,10 +31,7 @@ class GameRoom:
         while self._p1ID == self._p2ID:
             self._p2ID = random.random(1000, 9999)
         pass
-        self._enemyID = {
-            self._p1ID : self._p2ID,
-            self._p2ID : self._p1ID
-        }
+        self._enemyID = {self._p1ID: self._p2ID, self._p2ID: self._p1ID}
 
         p1Heading = random.randint(0, 1)
         p1Turn = bool(random.randint(0, 1))
@@ -55,6 +52,7 @@ class GameRoom:
         self._currentBoardPos = (startX, startY)
         self._currentHeading = p1Heading if p1Turn else p2Heading
         self._currentBoard = board
+        self._gameStatus = gamedata.GameStatus.RUNNING
 
     def _handleRequest(self, playerConn, playerID, rawRequest):
         request = communication.parseMsg(rawRequest)
@@ -65,15 +63,15 @@ class GameRoom:
 
     def _handleGetDataRequest(self, playerConn, playerID):
         rawResponse = communication.buildMsg(
-                (
-                    communication.ResponseCode.OK,
-                    gamedata.GameData(
-                        self._playerData[playerID],
-                        self._currentBoard,
-                        gamedata.GameStatus.RUNNING,
-                    ),
-                )
+            (
+                communication.ResponseCode.OK,
+                gamedata.GameData(
+                    self._playerData[playerID],
+                    self._currentBoard,
+                    self._gameStatus,
+                ),
             )
+        )
         playerConn.sendall(rawResponse)
 
     def _handlePickTileRequest(self, playerConn, playerID, pos):
@@ -95,8 +93,10 @@ class GameRoom:
             return
 
         chosenTile = self._currentBoard.getAt(*pos)
-        if chosenTile == gamedata.GameBoard.SpecialTile.SMILEY or\
-           chosenTile == gamedata.GameBoard.SpecialTile.EMPTY:
+        if (
+            chosenTile == gamedata.GameBoard.SpecialTile.SMILEY
+            or chosenTile == gamedata.GameBoard.SpecialTile.EMPTY
+        ):
             rawResponse = communication.buildMsg(
                 (communication.ResponseCode.NOT_OK, None)
             )
@@ -105,29 +105,54 @@ class GameRoom:
 
         enemyID = self._enemyID[playerID]
 
-        self._currentBoard.setAt(*self._currentBoardPos, gamedata.GameBoard.SpecialTile.EMPTY)
+        self._currentBoard.setAt(
+            *self._currentBoardPos, gamedata.GameBoard.SpecialTile.EMPTY
+        )
         self._currentBoardPos = pos
         self._currentBoard.setAt(*pos, gamedata.GameBoard.SpecialTile.SMILEY)
-        self._currentPlayerTurn = self._enemyID[playerID]
-        self._currentHeading = 1 - self._currentHeading
 
         self._playerData[playerID].ownScore += chosenTile
-        self._playerData[playerID].turn = bool(playerID == self._currentPlayerTurn)
-        self._playerData[playerID].lastPos = pos
-
         self._playerData[enemyID].enemyScore += chosenTile
-        self._playerData[enemyID].turn = bool(enemyID == self._currentPlayerTurn)
+        self._playerData[playerID].lastPos = pos
         self._playerData[enemyID].lastPos = pos
 
-        # TODO: Check if skipping a turn is required
+        currentHeading = self._currentHeading
+        rowEmpty = True
+        for x in range(8):
+            tile = self._currentBoard.getAt(x, pos[1])
+            if (
+                tile != gamedata.GameBoard.SpecialTile.EMPTY
+                and tile != gamedata.GameBoard.SpecialTile.SMILEY
+            ):
+                rowEmpty = False
+                break
 
-        rawResponse =  communication.buildMsg(
-                (communication.ResponseCode.OK, None)
-        )
+        columnEmpty = True
+        for y in range(8):
+            tile = self._currentBoard.getAt(pos[0], y)
+            if (
+                tile != gamedata.GameBoard.SpecialTile.EMPTY
+                and tile != gamedata.GameBoard.SpecialTile.SMILEY
+            ):
+                columnEmpty = False
+                break
+
+        if rowEmpty and columnEmpty:
+            self._gameStatus = gamedata.GameStatus.OVER
+        elif (1 - currentHeading) == gamedata.PlayerData.Heading.ROWS and rowEmpty:
+            pass
+        elif (
+            1 - currentHeading
+        ) == gamedata.PlayerData.Heading.COLUMNS and columnEmpty:
+            pass
+        else:
+            self._currentPlayerTurn = self._enemyID[playerID]
+            self._currentHeading = 1 - self._currentHeading
+            self._playerData[playerID].turn = bool(playerID == self._currentPlayerTurn)
+            self._playerData[enemyID].turn = bool(enemyID == self._currentPlayerTurn)
+
+        rawResponse = communication.buildMsg((communication.ResponseCode.OK, None))
         playerConn.sendall(rawResponse)
-
-
-
 
     def runGame(self):
         self._prepareGame()
@@ -168,11 +193,11 @@ class GameRoom:
 
 
 class GameServer:
-    def __init__(self, address, port, tickRate):
+    def __init__(self, address, port, tickRate, maxRooms):
         self._address = address
         self._port = port
         self._tickRate = tickRate
-        self._semaphore = multiprocessing.Semaphore(5)
+        self._semaphore = multiprocessing.Semaphore(maxRooms)
         self._openRooms = {}
 
     def _roomHandler(chan, id, sock, sem, tickRate):

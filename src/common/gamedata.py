@@ -15,9 +15,8 @@ class PlayerData:
 
 
 class GameStatus:
-    WON = 0
-    LOST = 1
-    RUNNING = 2
+    RUNNING = 0
+    OVER = 1
 
 
 class GameData:
@@ -37,7 +36,7 @@ class GameBoard:
 
     def tileToStr(tileData):
         if tileData == GameBoard.SpecialTile.EMPTY:
-            return "X"
+            return ""
         elif tileData == GameBoard.SpecialTile.SMILEY:
             return ":)"
 

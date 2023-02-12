@@ -58,7 +58,6 @@ class GameAppLayer:
         pass
 
 
-
 class LayerStack:
     def __init__(self, layers):
         self._layers = layers

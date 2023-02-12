@@ -1,4 +1,4 @@
-import sys # TODO: remove later
+import sys  # TODO: remove later
 import pygame
 
 from client import eventlist
@@ -6,23 +6,27 @@ from client.common.layer import LayerStack
 from client.gui.layers.boardlayer import BoardLayer
 from client.gui.layers.lobbylayer import LobbyLayer
 from client.gui.layers.openroomlayer import OpenRoomLayer
+from client.gui.layers.joinroomlayer import JoinRoomLayer
 from client.connection.layers.connectionlayer import ConnectionLayer
 
 
 class GameApp:
-    def __init__(self, screenSize):
+    def __init__(self, serverAddr, serverPort, screenSize):
         self._running = True
         self._eventSubscriptions = {}
 
         self._displayScreen = pygame.display.set_mode(screenSize)
         pygame.key.set_repeat(300, 100)
 
-        connectionLayer = ConnectionLayer(sys.argv[1], int(sys.argv[2]), clientPollrate=15)
+        connectionLayer = ConnectionLayer(serverAddr, serverPort, clientPollrate=15)
         boardGUILayer = BoardLayer()
         lobbyLayer = LobbyLayer()
         lobbyLayer.switchOn()
         openRoomLayer = OpenRoomLayer()
-        self._layerStack = LayerStack([openRoomLayer, connectionLayer, boardGUILayer, lobbyLayer])
+        joinRoomLayer = JoinRoomLayer()
+        self._layerStack = LayerStack(
+            [connectionLayer, boardGUILayer, openRoomLayer, joinRoomLayer, lobbyLayer]
+        )
         self._quitGameInternalEvents = set([eventlist.LOBBYGUILAYER_QUITGAME_ID])
 
     def _handleEvents(self):
@@ -37,7 +41,9 @@ class GameApp:
 
     def run(self):
         for layer in self._layerStack:
-            self._eventSubscriptions[layer.getID()] = set(layer.internalEventSubscriptions())
+            self._eventSubscriptions[layer.getID()] = set(
+                layer.internalEventSubscriptions()
+            )
 
         clock = pygame.time.Clock()
         while self._running:
@@ -55,8 +61,10 @@ class GameApp:
                         stopRunning = True
 
                     for l in self._layerStack:
-                        if l.getID() != layer.getID() and\
-                           e.id in self._eventSubscriptions[l.getID()]:
+                        if (
+                            l.getID() != layer.getID()
+                            and e.id in self._eventSubscriptions[l.getID()]
+                        ):
                             l.handleInternalEvent(e)
 
             if stopRunning:

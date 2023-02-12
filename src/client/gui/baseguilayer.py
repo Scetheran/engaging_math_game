@@ -42,7 +42,10 @@ class GUILayer(GameAppLayer):
         BACKGROUND_COLOR = (140, 40, 60)
         SCOREBOARD_SIZE2 = (2 * TILE_SIZE, TILE_SIZE)
         OWN_SCOREBOARD_POS = (TILE_SIZE, SCREEN_CENTER_Y + 3 * TILE_SIZE)
-        ENEMY_SCOREBOARD_POS = (SCREEN_WIDTH - 3 * TILE_SIZE, SCREEN_CENTER_Y - 4 * TILE_SIZE)
+        ENEMY_SCOREBOARD_POS = (
+            SCREEN_WIDTH - 3 * TILE_SIZE,
+            SCREEN_CENTER_Y - 4 * TILE_SIZE,
+        )
         SCORE_FONT = pygame.font.SysFont("Arial", TILE_FONT_SIZE // 2, bold=True)
         MENU_ITEM_SELECTOR_OFFSET = TILE_SIZE // 15
         return DataObject(
@@ -70,7 +73,7 @@ class GUILayer(GameAppLayer):
             ownScoreboardPos=OWN_SCOREBOARD_POS,
             enemyScoreboardPos=ENEMY_SCOREBOARD_POS,
             scoreFont=SCORE_FONT,
-            menuItemSelectorOffset=MENU_ITEM_SELECTOR_OFFSET
+            menuItemSelectorOffset=MENU_ITEM_SELECTOR_OFFSET,
         )
 
     def lastMovementCause(self):
@@ -147,7 +150,6 @@ class GUILayer(GameAppLayer):
                 self.switchOff()
                 return
         self._onUpdate()
-
 
     def scheduleSwitchOff(self, delay, goodbyeEvents=None):
         self._isAwaitingSwitchOff = True

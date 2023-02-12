@@ -8,8 +8,10 @@ def prependLength(buffer):
     res.extend(buffer)
     return res
 
+
 class RetryDataFetch(Exception):
     pass
+
 
 def recv_msg(sock: socket.socket, block=True):
     rawMsglen = recvall(sock, 4, block)
@@ -23,7 +25,11 @@ def recvall(sock: socket.socket, n, block=True):
     data = bytearray()
     while len(data) < n:
         try:
-            packet = sock.recv(n - len(data)) if block else sock.recv(n - len(data), socket.MSG_DONTWAIT)
+            packet = (
+                sock.recv(n - len(data))
+                if block
+                else sock.recv(n - len(data), socket.MSG_DONTWAIT)
+            )
             if not packet:
                 return None
             data.extend(packet)
