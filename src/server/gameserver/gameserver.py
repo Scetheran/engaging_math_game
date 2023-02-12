@@ -22,7 +22,6 @@ class GameRoom:
         self._p2Conn = self._chan.recv()
         self._chan.send(communication.ResponseCode.OK)
         self._chan.close()
-        print("Opponent joined the game")
 
     def _prepareGame(self):
         self._p1ID = random.randint(1000, 9999)
@@ -179,14 +178,12 @@ class GameRoom:
                 playerId, opponentConn = key.data
                 rawRequest = communication.recv_msg(key.fileobj)
                 if rawRequest is None:
-                    print(f"Player {playerId} terminated the connection. Exiting")
                     opponentConn.close()
                     self._run = False
                 else:
                     try:
                         self._handleRequest(key.fileobj, playerId, rawRequest)
                     except:
-                        print(f"Encountered an unexpected error")
                         self._run = False
 
             time.sleep(self._sleepDelay)
@@ -220,10 +217,8 @@ class GameServer:
             )
             pr.start()
             self._openRooms[roomCode] = parent_conn
-            print(f"Room code: {roomCode}")
             return communication.buildMsg((communication.ResponseCode.OK, roomCode))
 
-        print("All available rooms are currently occupied")
         return communication.buildMsg((communication.ResponseCode.SERVER_FULL, None))
 
     def _handleJoinRoom(self, conn, roomCode):
