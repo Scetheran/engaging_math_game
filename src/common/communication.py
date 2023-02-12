@@ -1,6 +1,7 @@
 import struct
 import socket
 import pickle
+from contextlib import contextmanager
 
 
 def prependLength(buffer):
@@ -14,22 +15,19 @@ class RetryDataFetch(Exception):
 
 
 def recv_msg(sock: socket.socket, block=True):
-    rawMsglen = recvall(sock, 4, block)
-    if not rawMsglen:
-        return None
-    msglen = struct.unpack("!I", rawMsglen)[0]
-    return recvall(sock, msglen, block)
+    with setblocking_socket(sock, block) as sckt:
+        rawMsglen = recvall(sckt, 4)
+        if not rawMsglen:
+            return None
+        msglen = struct.unpack("!I", rawMsglen)[0]
+        return recvall(sckt, msglen)
 
 
-def recvall(sock: socket.socket, n, block=True):
+def recvall(sock: socket.socket, n):
     data = bytearray()
     while len(data) < n:
         try:
-            packet = (
-                sock.recv(n - len(data))
-                if block
-                else sock.recv(n - len(data), socket.MSG_DONTWAIT)
-            )
+            packet = sock.recv(n - len(data))
             if not packet:
                 return None
             data.extend(packet)
@@ -40,6 +38,12 @@ def recvall(sock: socket.socket, n, block=True):
                 return None
     return data
 
+@contextmanager
+def setblocking_socket(sock, block):
+    if not block:
+        sock.setblocking(False)
+    yield sock
+    sock.setblocking(True)
 
 def buildMsg(obj):
     data = pickle.dumps(obj)
